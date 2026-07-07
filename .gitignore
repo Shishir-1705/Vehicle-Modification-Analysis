@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+.venv/
+ENV/
+
+# Node/Frontend
+node_modules/
+.npm
+.yarn
+dist/
+build/
+.next/
+
+# IDE/OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# FastAPI/Logs
+logs/
+*.log
+
+# Machine Learning / YOLO
+models/*.pt
+!models/yolov8n-seg.pt
+models/*.onnx
+!models/yolov8n-seg.onnx
+dataset/
+runs/
+yolov8n.pt
+
+# Docker
+.docker/
+
+# Environment Variables
+.env
+.env.local

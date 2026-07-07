@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # 1. FastAPI + YOLOv8 Backend
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+      - MONGODB_NAME=vehicle_mod_ai
+      - JWT_SECRET_KEY=super_secret_docker_key
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - ALERT_EMAIL=${ALERT_EMAIL:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+      - ./ml_pipeline:/app/ml_pipeline
+      - ./models:/app/models
+      - api_logs:/app/logs
+
+  # 2. MongoDB
+  mongo:
+    image: mongo:7.0
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 3. Mongo Express (Dev UI — remove in production)
+  mongo-express:
+    image: mongo-express:latest
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: secret
+    depends_on:
+      - mongo
+
+  # 4. Next.js Production Frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - api
+
+volumes:
+  mongodata:
+  api_logs:

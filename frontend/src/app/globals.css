@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0f172a; /* Deep Slate 900 */
+  --foreground: #f8fafc;
+  --primary: #6366f1; /* Indigo 500 */
+  --primary-glow: rgba(99, 102, 241, 0.4);
+  --accent: #8b5cf6; /* Violet 500 */
+  --accent-glow: rgba(139, 92, 246, 0.4);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --font-sans: 'Outfit', sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 0% 0%, var(--primary-glow) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, var(--accent-glow) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.primary-gradient-text {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 var(--primary-glow); }
+  70% { box-shadow: 0 0 0 15px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s infinite;
+}

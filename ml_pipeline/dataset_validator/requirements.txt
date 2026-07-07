@@ -1,0 +1,9 @@
+pycocotools
+opencv-python
+numpy
+matplotlib
+shapely
+imagehash
+Pillow
+scikit-learn
+tqdm
