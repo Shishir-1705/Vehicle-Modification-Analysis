@@ -29,9 +29,9 @@ COPY static/    ./static/
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# 6. Expose port dynamically (Railway sets PORT)
-ENV PORT=8000
-EXPOSE $PORT
+# 6. Expose port 7860 (Hugging Face Spaces default)
+ENV PORT=7860
+EXPOSE 7860
 
-# 7. Production ASGI server (4 workers)
-CMD gunicorn backend.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --graceful-timeout 30 --log-level info
+# 7. Production ASGI server (2 workers — optimized for HF free tier)
+CMD gunicorn backend.main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:7860 --timeout 120 --graceful-timeout 30 --log-level info

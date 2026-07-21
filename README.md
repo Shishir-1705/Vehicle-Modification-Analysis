@@ -1,3 +1,13 @@
+---
+title: Vehicle Mod AI Backend
+emoji: 🚗
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🏍️ Bike ModAI V5 Platform
 
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success) ![Stack](https://img.shields.io/badge/Stack-Next.js%20%2F%20FastAPI-blue) ![AI](https://img.shields.io/badge/AI-YOLOv8%20%2B%20ONNX-orange)
