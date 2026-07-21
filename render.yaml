@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: vehicle-mod-ai-backend
+    env: docker
+    region: ohio
+    plan: standard # We recommend standard for AI/Docker, but 'free' works for testing
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000 # Render's default port mapping
+      - key: ALLOWED_ORIGINS
+        value: "https://your-vercel-domain.vercel.app" # REPLACE THIS in Render dashboard later
+      - key: ENVIRONMENT
+        value: production
+      - key: MAX_WS_CONNECTIONS
+        value: "5"
+      - key: MONGO_URI
+        value: "" # Leave empty if you don't have MongoDB Atlas yet
