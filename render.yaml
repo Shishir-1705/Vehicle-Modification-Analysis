@@ -3,7 +3,7 @@ services:
     name: vehicle-mod-ai-backend
     env: docker
     region: ohio
-    plan: standard # We recommend standard for AI/Docker, but 'free' works for testing
+    plan: free # Changed to free to avoid payment prompts
     branch: main
     healthCheckPath: /health
     envVars:
