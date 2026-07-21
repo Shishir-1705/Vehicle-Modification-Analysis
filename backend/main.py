@@ -1,12 +1,17 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
+import os
+import asyncio
+
 from .config.database import init_db, close_db
 from .config.env import settings
 from .routers import auth, scan, analytics, predict, report
 from .middleware.monitoring import MonitoringMiddleware
 from .middleware.error_handler import ErrorHandlerMiddleware
+from .middleware.security import SecurityMiddleware
+from .utils.websocket import manager
 from .inference.video.stream import get_video_service
 
 db_status = {"connected": False, "error": None}
@@ -15,6 +20,11 @@ db_status = {"connected": False, "error": None}
 async def lifespan(app: FastAPI):
     # Startup
     global db_status
+    
+    # Store loop in video service for async broadcasting from threads
+    video_service = get_video_service()
+    video_service.loop = asyncio.get_running_loop()
+    
     try:
         await init_db()
         db_status["connected"] = True
@@ -38,13 +48,17 @@ app = FastAPI(
 )
 
 # 3. Add Production Middleware
+app.add_middleware(SecurityMiddleware)
 app.add_middleware(MonitoringMiddleware)
 app.add_middleware(ErrorHandlerMiddleware)
 
-# 3. Add Security Middleware
+# Configure CORS using Environment Variables for Railway/Vercel
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,6 +70,17 @@ app.include_router(scan.router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1")
 app.include_router(predict.router, prefix="/api/v1")
 app.include_router(report.router, prefix="/api/v1")
+
+@app.websocket("/ws/v1/events")
+async def websocket_events_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time AI threat and plate detection events."""
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @app.get("/api/v1/video_feed")
 def video_feed():

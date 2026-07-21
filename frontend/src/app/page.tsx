@@ -56,7 +56,7 @@ export default function Home() {
       setResult(data);
     } catch (err: any) {
       console.error(err);
-      setError("Analysis Engine Offline. Ensure backend is running at http://127.0.0.1:8000");
+      setError("Analysis Engine Offline. Ensure backend is running and reachable.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -183,10 +183,10 @@ export default function Home() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-black uppercase tracking-wider text-amber-400 mb-1">
-                    MongoDB Server Unreachable
+                    Database Server Unreachable
                   </h3>
                   <p className="text-xs text-slate-400 leading-relaxed mb-3">
-                    The FastAPI backend is operational, but it cannot connect to MongoDB at <code className="text-amber-300 font-mono text-[11px] bg-white/5 px-1.5 py-0.5 rounded">mongodb://localhost:27017</code>. 
+                    The FastAPI backend is operational, but it cannot connect to the database. 
                     Analytical historical grids, RTO queries, and live scans are running in fallback mock mode.
                   </p>
                   <div className="bg-black/40 rounded-xl p-3 border border-white/5 font-mono text-[10px] text-slate-500 mb-3 max-h-[80px] overflow-y-auto">

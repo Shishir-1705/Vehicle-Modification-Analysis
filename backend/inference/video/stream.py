@@ -4,8 +4,10 @@ import time
 from datetime import datetime
 from typing import Optional
 import numpy as np
+import asyncio
 from ..yolo.engine import get_yolo_engine
 from ..ocr.engine import get_ocr_engine
+from ...utils.websocket import manager
 
 class VideoStreamStore:
     """
@@ -48,6 +50,7 @@ class VideoStreamStore:
         self.plate_confidence: float = 0.0
         self._plate_cooldown = 0  # Frame counter for duplicate suppression
         self.lock = threading.Lock()
+        self.loop = None  # Will be set by FastAPI lifespan
 
         self.frame = np.zeros((480, 640, 3), dtype=np.uint8)
         self._set_placeholder("CAMERA STANDBY — PRESS START")
@@ -148,6 +151,17 @@ class VideoStreamStore:
                 print(f"❌ Capture error: {e}")
                 time.sleep(1)
 
+    def _broadcast_event(self, event_data: dict):
+        if self.loop is not None and manager:
+            try:
+                # Thread-safe async call to broadcast
+                asyncio.run_coroutine_threadsafe(
+                    manager.broadcast({"type": "NEW_EVENT", "data": event_data}),
+                    self.loop
+                )
+            except Exception as e:
+                print(f"❌ Failed to broadcast event: {e}")
+
     def _inference_loop(self):
         """Thread 2: YOLOv8 inference on latest frame."""
         while self.running:
@@ -196,21 +210,23 @@ class VideoStreamStore:
                                             self.plate_confidence = conf
                                         self._plate_cooldown = 30  # suppress for 30 frames
                                         # Add to event log
-                                        self.recent_events.append({
+                                        new_plate_event = {
                                             "id": str(int(time.time() * 1000)),
                                             "type": "Plate Detected",
                                             "component": plate_text,
                                             "confidence": round(conf, 2),
                                             "timestamp": datetime.now().strftime("%H:%M:%S"),
                                             "severity": "low"
-                                        })
+                                        }
+                                        self.recent_events.append(new_plate_event)
+                                        self._broadcast_event(new_plate_event)
                                 except Exception as e:
                                     print(f"[OCR] Error: {e}")
 
                             self._plate_cooldown = max(0, self._plate_cooldown - 1)
 
                             event = {
-                                "id": str(int(time.time() * 1000)),
+                                "id": str(int(time.time() * 1000)) + str(cls_id),
                                 "type": "Violation Detected",
                                 "component": name.replace("_", " ").title(),
                                 "confidence": round(conf, 2),
@@ -218,6 +234,7 @@ class VideoStreamStore:
                                 "severity": severity
                             }
                             self.recent_events.append(event)
+                            self._broadcast_event(event)
                             if len(self.recent_events) > 50:
                                 self.recent_events.pop(0)
 

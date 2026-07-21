@@ -7,11 +7,11 @@ import {
   getLiveEvents, LiveEvent,
   startVideoSession, stopVideoSession,
   getVideoStatus, setVideoSource,
-  getLatestPlate, lookupVehicle, generateAndDownloadReport
+  getLatestPlate, lookupVehicle, generateAndDownloadReport,
+  API_BASE_URL, WS_URL
 } from '@/lib/api';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/v1';
-const FEED_URL = `${API_BASE}/video_feed`;
+const FEED_URL = `${API_BASE_URL}/video_feed`;
 
 const severityColor: Record<string, string> = {
   critical: 'bg-red-600',
@@ -62,21 +62,40 @@ export const LiveMonitor: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Latency simulation + live events + plate polling
+  // Latency simulation + WebSockets for live events + plate polling
   useEffect(() => {
     const metricsInt = setInterval(() => setLatency(Math.floor(Math.random() * 18) + 12), 2000);
-    const eventsInt = setInterval(async () => {
-      try {
-        const liveEvents = await getLiveEvents();
-        if (liveEvents.length > 0) {
-          setEvents(prev => {
-            const merged = [...liveEvents, ...prev];
-            const unique = Array.from(new Map(merged.map(e => [e.id, e])).values());
-            return unique.sort((a, b) => b.id.localeCompare(a.id)).slice(0, 20);
-          });
+    
+    // WebSocket Event Listener
+    let ws: WebSocket;
+    let reconnectTimeout: NodeJS.Timeout;
+    
+    const connectWebSocket = () => {
+      if (!WS_URL) return;
+      ws = new WebSocket(WS_URL);
+      
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === 'NEW_EVENT' && payload.data) {
+            setEvents(prev => {
+              const merged = [payload.data, ...prev];
+              const unique = Array.from(new Map(merged.map(e => [e.id, e])).values());
+              return unique.sort((a, b) => b.id.localeCompare(a.id)).slice(0, 20);
+            });
+          }
+        } catch (e) {
+          console.error("Error parsing WS event", e);
         }
-      } catch {}
-    }, 2000);
+      };
+
+      ws.onclose = () => {
+        // Auto-reconnect after 3 seconds
+        reconnectTimeout = setTimeout(connectWebSocket, 3000);
+      };
+    };
+
+    connectWebSocket();
 
     // Plate polling — runs every 2s, auto-fetches RC on new plate
     const plateInt = setInterval(async () => {
@@ -99,7 +118,12 @@ export const LiveMonitor: React.FC = () => {
       } catch {}
     }, 2000);
 
-    return () => { clearInterval(metricsInt); clearInterval(eventsInt); clearInterval(plateInt); };
+    return () => { 
+      clearInterval(metricsInt); 
+      clearInterval(plateInt); 
+      if (ws) ws.close();
+      clearTimeout(reconnectTimeout);
+    };
   }, [isStreaming]);
 
   const handleToggleStream = async () => {
