@@ -20,6 +20,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache/
 
 # Virtual Environment
 venv/
@@ -28,11 +29,14 @@ ENV/
 
 # Node/Frontend
 node_modules/
+frontend/node_modules/
 .npm
 .yarn
 dist/
 build/
 .next/
+frontend/.next/
+frontend/out/
 
 # IDE/OS
 .idea/
@@ -41,10 +45,25 @@ build/
 *.swo
 .DS_Store
 Thumbs.db
+powershell.bat
+*/powershell.bat
+\'
 
 # FastAPI/Logs
 logs/
 *.log
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+modai.db
+backend/modai.db
+
+# Uploads & Temp Test Outputs
+static/uploads/
+scratch/
+scratch_test_*.py
 
 # Machine Learning / YOLO
 models/*.pt
@@ -54,10 +73,12 @@ models/*.onnx
 dataset/
 runs/
 yolov8n.pt
+yolov8l-seg.pt
 
 # Docker
 .docker/
 
 # Environment Variables
 .env
-.env.local
+.env.*
+!.env.example

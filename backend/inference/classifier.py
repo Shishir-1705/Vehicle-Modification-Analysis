@@ -34,7 +34,8 @@ def load_binary_model():
     )
     if os.path.exists(BINARY_MODEL_PATH):
         model.load_state_dict(torch.load(BINARY_MODEL_PATH, map_location=DEVICE))
-        print(f"✅ Binary classifier loaded from {BINARY_MODEL_PATH}")
+        print(f"[OK] Binary classifier loaded from {BINARY_MODEL_PATH}")
+
     model.to(DEVICE)
     model.eval()
     return model
@@ -106,17 +107,16 @@ def load_multi_label_model():
     if os.path.exists(MULTI_LABEL_MODEL_PATH):
         try:
             model.load_state_dict(torch.load(MULTI_LABEL_MODEL_PATH, map_location=DEVICE))
-            print(f"✅ Multi-label classifier loaded from {MULTI_LABEL_MODEL_PATH}")
+            print(f"[OK] Multi-label classifier loaded from {MULTI_LABEL_MODEL_PATH}")
         except Exception as e:
-            print(f"⚠️ Multi-label weights load failed (likely size mismatch): {e}. Re-initializing and saving new 6-class weights.")
-            # Save newly initialized weights to overwrite old 3-class weights and prevent future failures
+            print(f"[WARN] Multi-label weights load failed: {e}. Re-initializing weights.")
             os.makedirs(os.path.dirname(MULTI_LABEL_MODEL_PATH), exist_ok=True)
             torch.save(model.state_dict(), MULTI_LABEL_MODEL_PATH)
     else:
-        # Create empty weights file to allow backend startup and subsequent training without issues
         os.makedirs(os.path.dirname(MULTI_LABEL_MODEL_PATH), exist_ok=True)
         torch.save(model.state_dict(), MULTI_LABEL_MODEL_PATH)
-        print(f"✅ Created initial multi-label classifier weights at {MULTI_LABEL_MODEL_PATH}")
+        print(f"[OK] Created initial multi-label classifier weights at {MULTI_LABEL_MODEL_PATH}")
+
     model.to(DEVICE)
     model.eval()
     return model
@@ -174,7 +174,8 @@ def classify_bike(image_bytes: bytes):
                 
         return results
     except Exception as e:
-        print(f"⚠️ PyTorch Inference Exception (using fallback): {e}")
+        print(f"[WARN] PyTorch Inference Exception: {e}")
+
         # Elegant, bulletproof fallback mock result
         return {
             "status": "modified",

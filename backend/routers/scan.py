@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import Response
 from typing import Optional
 from .. import crud, schemas
-from .auth import get_current_user
+from .auth import get_current_user, oauth2_scheme
+
 from ..inference.yolo.engine import get_yolo_engine
 from ..utils.storage import upload_image_to_cloud
 from ..services.recommender import get_suggestions
@@ -125,17 +126,18 @@ async def analyze_bike(
     final_scan = await crud.get_scan(str(scan_entry.id))
     detections = await crud.get_detections_for_scan(str(scan_entry.id))
     
-    scan_dict = final_scan.dict()
+    scan_dict = {c.name: getattr(final_scan, c.name) for c in final_scan.__table__.columns}
     scan_dict['id'] = str(final_scan.id)
     scan_dict['detections'] = []
     
     for d in detections:
-        d_dict = d.dict()
+        d_dict = {c.name: getattr(d, c.name) for c in d.__table__.columns}
         d_dict['id'] = str(d.id)
         d_dict['recommendations'] = [] # Need to fetch recommendations if needed, leaving empty for now
         scan_dict['detections'].append(d_dict)
         
     return scan_dict
+
 
 @router.get("/{scan_id}/report")
 async def get_scan_report(
@@ -143,17 +145,20 @@ async def get_scan_report(
     owner_name: Optional[str] = None,
     plate_number: Optional[str] = None,
     location: Optional[str] = None,
-    token: Optional[str] = None, # Allow token in query string
+    token: Optional[str] = None,
+    bearer_token: Optional[str] = Depends(oauth2_scheme)
 ):
-    # Manual authentication check for file downloads (supports query param)
+    # Manual authentication check for file downloads (supports header + query param)
     from .auth import get_current_user
+    effective_token = token or bearer_token
+    if not effective_token:
+        raise HTTPException(status_code=401, detail="Authentication required for report generation")
+
     try:
-        # If token is provided in query, use it. Otherwise, get_current_user will look for headers.
-        current_user = await get_current_user(token=token) if token else None
-        if not current_user:
-             raise HTTPException(status_code=401, detail="Authentication required for report generation")
+        current_user = await get_current_user(token=effective_token)
     except Exception:
-         raise HTTPException(status_code=401, detail="Invalid session token. Please re-login.")
+        raise HTTPException(status_code=401, detail="Invalid session token. Please re-login.")
+
     # 1. Fetch scan with all relationships
     scan_entry = await crud.get_scan(scan_id)
     if not scan_entry:
@@ -162,16 +167,17 @@ async def get_scan_report(
     if scan_entry.user_id != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to access this report")
         
-    scan_data = scan_entry.dict()
+    scan_data = {c.name: getattr(scan_entry, c.name) for c in scan_entry.__table__.columns}
     scan_data['id'] = str(scan_entry.id)
     
     # Also fetch detections
     detections = await crud.get_detections_for_scan(str(scan_entry.id))
     scan_data['detections'] = []
     for d in detections:
-        d_dict = d.dict()
+        d_dict = {c.name: getattr(d, c.name) for c in d.__table__.columns}
         d_dict['id'] = str(d.id)
         scan_data['detections'].append(d_dict)
+
     
     try:
         user_meta = {
@@ -193,3 +199,17 @@ async def get_scan_report(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Report Generation Failed: {str(e)}")
+
+@router.delete("/{scan_id}")
+async def delete_scan_entry(
+    scan_id: str,
+    current_user: schemas.UserResponse = Depends(get_current_user)
+):
+    """Deletes a scan record and its associated detections from SQLite DB for authenticated user."""
+    success = await crud.delete_scan(scan_id, user_id=str(current_user.id))
+    if not success:
+        raise HTTPException(status_code=404, detail="Scan record not found or access denied")
+    return {"status": "deleted", "scan_id": scan_id}
+
+
+

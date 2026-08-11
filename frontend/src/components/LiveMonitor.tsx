@@ -398,7 +398,8 @@ export const LiveMonitor: React.FC = () => {
                       exit={{ opacity: 0 }}
                       className="p-3 bg-white/5 border border-white/5 rounded-xl relative overflow-hidden"
                     >
-                      <div className={`absolute top-0 left-0 w-1 h-full ${severityColor[event.severity] ?? 'bg-slate-500'}`} />
+                      <div className={`absolute top-0 left-0 w-1 h-full ${severityColor[(event.severity || 'low') as keyof typeof severityColor] || 'bg-slate-500'}`} />
+
                       <div className="flex justify-between items-start mb-1 pl-2">
                         <p className="text-[9px] font-black uppercase tracking-tight text-slate-400">{event.type}</p>
                         <span className="text-[8px] font-mono text-slate-600">{event.timestamp}</span>

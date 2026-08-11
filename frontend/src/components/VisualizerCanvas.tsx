@@ -66,7 +66,10 @@ export const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({
     
     // Simplistic zoom logic for proof of concept
     // Ideally, calculate based on bounding box percentage
-    const { x, y, w, h } = activeDetection.bounding_box;
+    const box = (activeDetection.bounding_box as any) || [0, 0, 0, 0];
+    const x = box.x || box[0] || 0;
+    const y = box.y || box[1] || 0;
+
     // Normalized center of the bounding box (this assumes the box is absolute, but our mask is normalized)
     // Actually, YOLO engine provided absolute boxes but normalized masks.
     // Let's assume the visualizer works on percentage for consistency.
@@ -155,18 +158,20 @@ export const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({
           {detections.map((det) => {
             const isSelected = activeDetectionId === det.id;
             const isHovered = hoveredId === det.id;
-            const color = severityColors[det.explanation?.severity || 'medium'];
+            const color = severityColors[(det.explanation?.severity || 'medium') as keyof typeof severityColors] || severityColors.medium;
             
             // Format polygon points from [[x,y], [x,y]] to "x,y x,y"
             const points = det.segmentation?.map(p => `${p[0] * 100},${p[1] * 100}`).join(' ');
+
 
             return (
               <g 
                 key={det.id} 
                 className="pointer-events-auto cursor-pointer"
-                onMouseEnter={() => setHoveredId(det.id)}
+                onMouseEnter={() => setHoveredId(det.id || null)}
                 onMouseLeave={() => setHoveredId(null)}
-                onClick={() => onDetectionClick(det.id)}
+                onClick={() => det.id && onDetectionClick(det.id)}
+
               >
                 {/* Segmentation Mask */}
                 {points && (
@@ -239,9 +244,10 @@ export const VisualizerCanvas: React.FC<VisualizerCanvasProps> = ({
             className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 flex items-center space-x-4 shadow-2xl"
           >
             <div className="flex items-center space-x-3 pr-4 border-r border-white/10">
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: severityColors[activeDetection.explanation?.severity || 'medium'] }} />
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: severityColors[(activeDetection.explanation?.severity || 'medium') as keyof typeof severityColors] || severityColors.medium }} />
               <span className="text-sm font-bold uppercase tracking-wider">{activeDetection.explanation?.violation}</span>
             </div>
+
 
             <button 
               onClick={(e) => {

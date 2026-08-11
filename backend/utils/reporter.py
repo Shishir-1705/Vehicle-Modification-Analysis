@@ -43,7 +43,8 @@ class ANPRReportGenerator(FPDF):
         # Version badge
         self.set_font('Helvetica', '', 7)
         self.set_text_color(*C_BLUE)
-        self.cell(0, 10, f'V5.0 • {datetime.now().strftime("%Y-%m-%d %H:%M")} IST', ln=True, align='R')
+        self.cell(0, 10, f'V5.0 | {datetime.now().strftime("%Y-%m-%d %H:%M")} IST', ln=True, align='R')
+
         self.set_font('Helvetica', 'B', 9)
         self.set_text_color(*C_BLUE)
         self.cell(0, 6, 'OFFICIAL AI VEHICLE COMPLIANCE REPORT', ln=True, align='L')
@@ -68,10 +69,12 @@ class ANPRReportGenerator(FPDF):
     def kv_row(self, label: str, value: str, label_w: int = 55):
         self.set_font('Helvetica', 'B', 9)
         self.set_text_color(*C_LIGHT)
-        self.cell(label_w, 7, label + ':', ln=False)
+        self.cell(label_w, 6, label + ':', ln=False)
         self.set_font('Helvetica', '', 9)
         self.set_text_color(*C_DARK)
-        self.multi_cell(0, 7, value or '—')
+        clean_val = str(value or '-').replace('•', '|').replace('—', '-')
+        self.multi_cell(186 - label_w, 6, clean_val, ln=True)
+
 
     def badge(self, text: str, color: tuple):
         """Colored inline badge."""
@@ -236,7 +239,8 @@ def generate_pdf_bytes(
     if not detections:
         pdf.set_font('Helvetica', '', 10)
         pdf.set_text_color(*C_GREEN)
-        pdf.cell(0, 10, '✔  No violations detected. Vehicle is compliant.', ln=True)
+        pdf.cell(0, 10, '[OK] No violations detected. Vehicle is compliant.', ln=True)
+
     else:
         for i, det in enumerate(detections, 1):
             exp = det.get('explanation') or {}
@@ -316,5 +320,10 @@ def generate_pdf_bytes(
     pdf.set_text_color(*C_LIGHT)
     pdf.cell(0, 5, f'Verification Hash: {uuid.uuid4().hex}', ln=True)
 
-    # ── Output to bytes (no file write) ────────────────────────────────────────
-    return bytes(pdf.output())
+    output_data = pdf.output()
+    if isinstance(output_data, (bytes, bytearray)):
+        return bytes(output_data)
+    elif isinstance(output_data, str):
+        return output_data.encode('latin1')
+    return bytes(output_data)
+

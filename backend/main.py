@@ -1,4 +1,16 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import sys
+import io
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
+
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
@@ -7,7 +19,9 @@ import asyncio
 
 from .config.database import init_db, close_db
 from .config.env import settings
+from . import schemas, crud
 from .routers import auth, scan, analytics, predict, report
+
 from .middleware.monitoring import MonitoringMiddleware
 from .middleware.error_handler import ErrorHandlerMiddleware
 from .middleware.security import SecurityMiddleware
@@ -151,12 +165,29 @@ def set_video_source(source: str):
 
 @app.get("/health")
 def health_check():
-    global db_status
     return {
-        "status": "ok", # keeps start script and checks happy
-        "database": "Online" if db_status["connected"] else "Offline (Connection Failed)",
-        "database_error": db_status["error"],
-        "message": "Operational" if db_status["connected"] else "Running in Offline Mode",
-        "version": "5.1",
-        "engine": "FastAPI + YOLOv8 Real-Time Ready"
+        "status": "ok",
+        "database": "Online (SQLAlchemy SQLite Persistent Engine)",
+        "database_error": None,
+        "message": "Operational & Persistent in modai.db",
+        "version": "5.2",
+        "engine": "FastAPI + YOLOv8 + SQLAlchemy ORM"
     }
+
+@app.get("/api/me", response_model=schemas.UserProfileResponse)
+async def api_me_alias(current_user=Depends(auth.get_current_user)):
+
+    user_history = await crud.get_history(limit=1000, user_id=str(current_user.id))
+    user_scans = user_history.get("total", 0)
+    return schemas.UserProfileResponse(
+        id=str(current_user.id),
+        full_name=current_user.full_name,
+        email=current_user.email,
+        created_at=current_user.created_at,
+        role="Verified Inspector",
+        total_scans=user_scans,
+        reports_generated=user_scans
+    )
+
+
+

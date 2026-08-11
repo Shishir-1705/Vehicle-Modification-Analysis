@@ -1,58 +1,156 @@
 @import "tailwindcss";
 
+html {
+
+  scroll-behavior: smooth;
+}
+
 :root {
-  --background: #0f172a; /* Deep Slate 900 */
-  --foreground: #f8fafc;
-  --primary: #6366f1; /* Indigo 500 */
-  --primary-glow: rgba(99, 102, 241, 0.4);
-  --accent: #8b5cf6; /* Violet 500 */
-  --accent-glow: rgba(139, 92, 246, 0.4);
+
+
+  --background: #050505;
+  --surface: #0d0d0d;
+  --foreground: #ffffff;
+  --muted: #a1a1aa;
+  --accent-mint: #00e5a8;
+  --accent-blue: #3b82f6;
+  --accent-mint-glow: rgba(0, 229, 168, 0.25);
+  --accent-blue-glow: rgba(59, 130, 246, 0.25);
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --font-space: 'Space Grotesk', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-accent: var(--accent);
-  --font-sans: 'Outfit', sans-serif;
+  --color-muted: var(--muted);
+  --color-mint: var(--accent-mint);
+  --color-blue: var(--accent-blue);
+  --font-sans: var(--font-inter);
+  --font-space: var(--font-space);
+  --font-mono: var(--font-mono);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   min-height: 100vh;
   overflow-x: hidden;
+  font-family: var(--font-inter);
   background-image: 
-    radial-gradient(circle at 0% 0%, var(--primary-glow) 0%, transparent 50%),
-    radial-gradient(circle at 100% 100%, var(--accent-glow) 0%, transparent 50%);
+    radial-gradient(circle at 10% 10%, rgba(0, 229, 168, 0.07) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.07) 0%, transparent 45%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
   background-attachment: fixed;
 }
 
-.glass-card {
+.font-space {
+  font-family: var(--font-space) !important;
+}
+
+.font-inter {
+  font-family: var(--font-inter) !important;
+}
+
+.font-mono-tech {
+  font-family: var(--font-mono) !important;
+}
+
+.glass-luxury {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 24px;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-luxury-hover:hover {
+  border-color: rgba(0, 229, 168, 0.3);
+  box-shadow: 0 0 40px rgba(0, 229, 168, 0.12), 0 30px 60px -12px rgba(0, 0, 0, 0.8);
+  transform: translateY(-4px);
+}
+
+.hud-card {
+  position: relative;
+  background: rgba(13, 13, 13, 0.8);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+.hud-card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 229, 168, 0.6), transparent);
+}
+
+.gradient-mint-text {
+  background: linear-gradient(135deg, #ffffff 0%, #00e5a8 50%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.primary-gradient-text {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+.gradient-white-text {
+  background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-@keyframes pulse-glow {
-  0% { box-shadow: 0 0 0 0 var(--primary-glow); }
-  70% { box-shadow: 0 0 0 15px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
+.neon-mint {
+  color: #00e5a8;
+  text-shadow: 0 0 15px rgba(0, 229, 168, 0.5);
 }
 
-.pulse-glow {
-  animation: pulse-glow 2s infinite;
+.bg-mesh-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(0, 229, 168, 0.15) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 80%);
 }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s ease-in-out infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 168, 0.4);
+}
+
+

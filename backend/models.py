@@ -1,67 +1,67 @@
-from beanie import Document, Link
-from pydantic import Field
-from typing import Optional, List, Dict, Any
+from sqlalchemy import Column, String, Float, DateTime, Boolean, Text, ForeignKey, JSON
+from sqlalchemy.orm import relationship
 from datetime import datetime
+import uuid
+from .config.database import Base
 
-class User(Document):
-    email: str
-    hashed_password: str
-    is_premium: bool = False
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+class UserDB(Base):
+    __tablename__ = "users"
 
-    class Settings:
-        name = "users"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    full_name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_premium = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-class RCData(Document):
-    plate_number: str
-    owner_masked: Optional[str] = None
-    manufacturer: Optional[str] = None
-    vehicle_model: Optional[str] = None
-    fuel_type: Optional[str] = None
-    registration_date: Optional[str] = None
-    insurance_valid_till: Optional[str] = None
-    vehicle_class: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    class Settings:
-        name = "rc_data"
+class ScanDB(Base):
+    __tablename__ = "scans"
 
-class Scan(Document):
-    user_id: str  # Store string ID to avoid strict linking if needed, or use Link[User]
-    image_url: str
-    scanned_at: datetime = Field(default_factory=datetime.utcnow)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, index=True, nullable=False)
+    image_url = Column(Text, nullable=False)
+    scanned_at = Column(DateTime, default=datetime.utcnow, index=True)
     
-    # Classification Metadata
-    status: str = "pending" # stock or modified
-    binary_confidence: float = 0.0
-    modification_scores: Optional[Dict[str, float]] = None
+    status = Column(String, default="pending", index=True)  # stock or modified
+    binary_confidence = Column(Float, default=0.0)
+    modification_scores = Column(JSON, nullable=True)
     
-    # Vehicle Metadata (Migrated from RCData & OCR)
-    plate_number: Optional[str] = None
-    vehicle_model: Optional[str] = None
-    vehicle_owner: Optional[str] = None
-    owner_contact: Optional[str] = None
+    # Metadata Fields
+    plate_number = Column(String, index=True, nullable=True)
+    vehicle_model = Column(String, nullable=True)
+    vehicle_owner = Column(String, nullable=True)
+    owner_contact = Column(String, nullable=True)
+    gradcam_image = Column(Text, nullable=True)
+    pdf_path = Column(Text, nullable=True)
 
-    class Settings:
-        name = "scans"
+    # Relationships
+    detections = relationship("DetectionDB", back_populates="scan", cascade="all, delete-orphan")
 
-class Detection(Document):
-    scan_id: str
-    component_name: str
-    confidence: float
-    bounding_box: Dict[str, float]
-    explanation: Optional[Dict[str, Any]] = None
-    segmentation: Optional[List[List[float]]] = None
-    heatmap: Optional[str] = None
+class DetectionDB(Base):
+    __tablename__ = "detections"
 
-    class Settings:
-        name = "detections"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    scan_id = Column(String, ForeignKey("scans.id", ondelete="CASCADE"), nullable=False, index=True)
+    component_name = Column(String, nullable=False)
+    confidence = Column(Float, default=0.0)
+    bounding_box = Column(JSON, nullable=False)
+    explanation = Column(JSON, nullable=True)
+    segmentation = Column(JSON, nullable=True)
+    heatmap = Column(Text, nullable=True)
 
-class Recommendation(Document):
-    detection_id: str
-    product_name: str
-    reason: str
-    affiliate_link: Optional[str] = None
+    scan = relationship("ScanDB", back_populates="detections")
 
-    class Settings:
-        name = "recommendations"
+class RCDataDB(Base):
+    __tablename__ = "rc_data"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    plate_number = Column(String, unique=True, index=True, nullable=False)
+    owner_masked = Column(String, nullable=True)
+    manufacturer = Column(String, nullable=True)
+    vehicle_model = Column(String, nullable=True)
+    fuel_type = Column(String, nullable=True)
+    registration_date = Column(String, nullable=True)
+    insurance_valid_till = Column(String, nullable=True)
+    vehicle_class = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

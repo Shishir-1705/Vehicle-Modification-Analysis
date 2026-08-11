@@ -43,11 +43,17 @@ class OCREngine:
         img_np = np.array(img)
         
         if bbox:
-            x, y, w, h = int(bbox['x'] - bbox['w']/2), int(bbox['y'] - bbox['h']/2), int(bbox['w']), int(bbox['h'])
             h_orig, w_orig = img_np.shape[:2]
-            y1, y2 = max(0, y), min(h_orig, y + h)
-            x1, x2 = max(0, x), min(w_orig, x + w)
-            img_np = img_np[y1:y2, x1:x2]
+            if isinstance(bbox, dict):
+                x = int(bbox.get('x', 0))
+                y = int(bbox.get('y', 0))
+                w = int(bbox.get('w', w_orig))
+                h = int(bbox.get('h', h_orig))
+                img_np = img_np[max(0, y):min(h_orig, y + h), max(0, x):min(w_orig, x + w)]
+            elif isinstance(bbox, (list, tuple)) and len(bbox) == 4:
+                x1, y1, x2, y2 = [int(v) for v in bbox]
+                img_np = img_np[max(0, y1):min(h_orig, y2), max(0, x1):min(w_orig, x2)]
+
 
         if img_np.size == 0: return ""
 

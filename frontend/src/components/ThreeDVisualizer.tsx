@@ -17,8 +17,12 @@ const InspectionObject = ({ textureUrl, detection }: { textureUrl: string, detec
   const texture = useLoader(THREE.TextureLoader, textureUrl);
   
   // Calculate aspect ratio for the plane
-  const aspect = detection.bounding_box.w / detection.bounding_box.h;
+  const bbox = (detection.bounding_box as any) || [0, 0, 100, 100];
+  const w = bbox.w || (Array.isArray(bbox) && bbox.length >= 4 ? bbox[2] - bbox[0] : 100);
+  const h = bbox.h || (Array.isArray(bbox) && bbox.length >= 4 ? bbox[3] - bbox[1] : 100);
+  const aspect = Math.max(0.2, Math.min(5, w / (h || 1)));
   const size = 3; // base size in 3D units
+
 
   return (
     <group>
