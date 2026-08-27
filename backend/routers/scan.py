@@ -44,6 +44,8 @@ async def analyze_bike(
     # 4. Yolo Engine Pass (Object Detection for ROI)
     yolo_engine = get_yolo_engine()
     detections = yolo_engine.predict(img_bytes)
+
+
     
     # 4. Generate Recommendations based on inferences
     suggestions = get_suggestions(detections)

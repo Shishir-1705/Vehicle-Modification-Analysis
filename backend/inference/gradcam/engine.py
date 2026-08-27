@@ -83,8 +83,11 @@ class GradCAMEngine:
         cam = (cam - cam_min) / (cam_max - cam_min + 1e-8)
         
         self._unregister_hooks()
+        self.activations = None
+        self.gradients = None
         
         heatmap = cam.detach().cpu().numpy()
+
         heatmap = cv2.resize(heatmap, original_size)
         
         if bbox:

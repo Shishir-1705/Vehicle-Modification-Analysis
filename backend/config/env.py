@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 Days
     
     # Model Settings
-    YOLO_MODEL_PATH: str = "yolov8l-seg.pt"
+    YOLO_MODEL_PATH: str = "models/yolov8n-seg.pt"
+
 
     class Config:
         env_file = ".env"

@@ -19,9 +19,15 @@ class OCREngine:
         return cls._instance
 
     def _initialize(self):
-        gpu_enabled = torch.cuda.is_available()
-        print(f"📖 Initializing OCR Engine... (GPU: {gpu_enabled})")
-        self.reader = easyocr.Reader(['en'], gpu=gpu_enabled)
+        self._reader = None
+
+    def _get_reader(self):
+        if self._reader is None:
+            gpu_enabled = torch.cuda.is_available()
+            print(f"📖 Lazy Initializing EasyOCR Engine... (GPU: {gpu_enabled})")
+            self._reader = easyocr.Reader(['en'], gpu=gpu_enabled)
+        return self._reader
+
 
     def preprocess_for_ocr(self, img_np: np.ndarray) -> np.ndarray:
         # Convert to grayscale
@@ -60,7 +66,11 @@ class OCREngine:
         # Preprocess
         processed_img = self.preprocess_for_ocr(img_np)
 
-        results = self.reader.readtext(processed_img)
+        reader = self._get_reader()
+        with torch.inference_mode():
+            results = reader.readtext(processed_img)
+
+
         
         # Raw extracted string
         full_text = "".join([res[1].replace(" ", "").upper() for res in results if res[2] > 0.3])

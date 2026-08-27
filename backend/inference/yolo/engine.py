@@ -17,43 +17,57 @@ class YOLOEngine:
         return cls._instance
 
     def _initialize(self):
+        self._model = None
+        self._initialized = False
+
+    def _ensure_loaded(self):
+        if self._initialized:
+            return
+        self._initialized = True
+        
         _ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-        _PRIMARY_MODEL_PATH = _ROOT_DIR / "models" / "yolov8l-seg.pt"
-        _FALLBACK_MODEL_PATH = _ROOT_DIR / "yolov8l-seg.pt"
+        _PRIMARY_MODEL_PATH = _ROOT_DIR / "models" / "yolov8n-seg.pt"
+        _FALLBACK_MODEL_PATH = _ROOT_DIR / "yolov8n-seg.pt"
 
         try:
             from ultralytics import YOLO
             import torch
             import shutil
             
-            # GPU Fallback support
+            # GPU/CPU device support
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
             model_path = _PRIMARY_MODEL_PATH if _PRIMARY_MODEL_PATH.exists() else _FALLBACK_MODEL_PATH
             
             if model_path.exists():
                 self._model = YOLO(str(model_path))
                 self._model.to(device)
-                print(f"✅ YOLOv8 model loaded from {model_path} on {device}")
+                print(f"✅ Lightweight YOLOv8n model loaded from {model_path} on {device}")
             else:
-                print(f"📥 YOLO model not found at {model_path}. Downloading yolov8l-seg.pt...")
-                self._model = YOLO("yolov8l-seg.pt")
+                print(f"📥 Lightweight YOLO model not found at {model_path}. Loading yolov8n-seg.pt...")
+                self._model = YOLO("yolov8n-seg.pt")
                 self._model.to(device)
-                # Save it to the models folder for future loads
                 os.makedirs(os.path.dirname(_PRIMARY_MODEL_PATH), exist_ok=True)
-                shutil.copy("yolov8l-seg.pt", str(_PRIMARY_MODEL_PATH))
-                print(f"✅ YOLOv8 model downloaded and saved to {_PRIMARY_MODEL_PATH}")
+                if os.path.exists("yolov8n-seg.pt"):
+                    shutil.copy("yolov8n-seg.pt", str(_PRIMARY_MODEL_PATH))
+                print(f"✅ YOLOv8n model ready on {device}")
         except Exception as e:
-            print(f"⚠️ YOLO initialization exception: {e}. Using mock detections.")
+            print(f"⚠️ YOLO initialization exception: {e}. Using fallback detections.")
 
     @property
     def model(self):
+        self._ensure_loaded()
         return self._model
+
 
     def predict(self, image_bytes: bytes, conf_threshold: float = 0.4) -> list:
         try:
+            self._ensure_loaded()
             if self._model is not None:
+                import torch
                 image = Image.open(io.BytesIO(image_bytes))
-                results = self._model(image, conf=conf_threshold, verbose=False)
+                with torch.inference_mode():
+                    results = self._model(image, conf=conf_threshold, verbose=False)
+
                 
                 mapping = []
                 for r in results:

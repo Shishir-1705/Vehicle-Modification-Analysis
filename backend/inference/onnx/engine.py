@@ -21,32 +21,31 @@ class ONNXEngine:
         
     def _initialize(self):
         root_dir = Path(__file__).resolve().parent.parent.parent.parent
-        model_path = root_dir / "models" / "yolov8l-seg.onnx"
+        model_path = root_dir / "models" / "yolov8n-seg.onnx"
         
         if not model_path.exists():
-            model_path = root_dir / "yolov8l-seg.onnx"
+            model_path = root_dir / "yolov8n-seg.onnx"
             
         if not os.path.exists(model_path):
             print(f"⚙️ ONNX model not found at {model_path}. Attempting to auto-export from PyTorch model...")
             try:
                 from ultralytics import YOLO
                 import shutil
-                pt_path = root_dir / "models" / "yolov8l-seg.pt"
+                pt_path = root_dir / "models" / "yolov8n-seg.pt"
                 if not pt_path.exists():
-                    pt_path = root_dir / "yolov8l-seg.pt"
+                    pt_path = root_dir / "yolov8n-seg.pt"
                 
                 if pt_path.exists():
                     model = YOLO(str(pt_path))
                 else:
-                    model = YOLO("yolov8l-seg.pt")
+                    model = YOLO("yolov8n-seg.pt")
                     
                 exported_path = model.export(format="onnx")
                 if os.path.exists(exported_path) and os.path.abspath(exported_path) != os.path.abspath(model_path):
                     os.makedirs(os.path.dirname(model_path), exist_ok=True)
                     shutil.copy(exported_path, model_path)
                     
-                # Also copy to root folder if it was loaded from models folder
-                root_onnx = root_dir / "yolov8l-seg.onnx"
+                root_onnx = root_dir / "yolov8n-seg.onnx"
                 if not root_onnx.exists() and os.path.exists(model_path):
                     shutil.copy(model_path, root_onnx)
                 print(f"✅ ONNX model successfully exported and saved to {model_path}")
@@ -54,6 +53,7 @@ class ONNXEngine:
                 print(f"⚠️ Failed to auto-export ONNX: {e}")
                 self.session = None
                 return
+
             
         # GPU Fallback Logic for ONNX Runtime
         providers = ['CPUExecutionProvider']
