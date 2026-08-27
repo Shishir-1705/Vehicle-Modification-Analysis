@@ -11,9 +11,11 @@ def upload_image_to_cloud(image_bytes: bytes, file_ext: str = "jpg") -> str:
     unique_name = f"modai_scan_{uuid.uuid4().hex[:8]}.{file_ext}"
     
     # Ensure local directory exists for the reporter
-    upload_dir = os.path.join("static", "uploads")
+    storage_root = os.getenv("AXION_STORAGE_DIR", ".")
+    upload_dir = os.path.join(storage_root, "static", "uploads")
     if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
+        os.makedirs(upload_dir, exist_ok=True)
+
         
     local_path = os.path.join(upload_dir, unique_name)
     with open(local_path, "wb") as f:

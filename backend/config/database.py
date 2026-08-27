@@ -3,11 +3,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from .env import settings
 
-# Determine Database URL: Use SQLite for local development (modai.db) or PostgreSQL in production
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./modai.db")
+# Determine Storage Root and Database URL
+STORAGE_DIR = os.getenv("AXION_STORAGE_DIR", ".")
+DEFAULT_SQLITE_PATH = os.path.join(STORAGE_DIR, "modai.db")
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_SQLITE_PATH}")
 
 # SQLite requires connect_args check_same_thread=False
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
 
 engine = create_engine(
     DATABASE_URL,
