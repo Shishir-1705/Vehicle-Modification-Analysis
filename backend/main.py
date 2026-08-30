@@ -51,11 +51,11 @@ async def lifespan(app: FastAPI):
     try:
         await init_db()
         db_status["connected"] = True
-        print("✅ MONGODB CONNECTION ESTABLISHED SUCCESSFULLY via Beanie ODM")
+        print("✅ SQLITE DATABASE CONNECTION & SCHEMAS INITIALIZED SUCCESSFULLY (modai.db)")
     except Exception as e:
         db_status["connected"] = False
         db_status["error"] = str(e)
-        print(f"❌ MONGODB CONNECTION FAILED: {e}")
+        print(f"❌ SQLITE DATABASE INITIALIZATION FAILED: {e}")
         print("💡 API Server will continue running, but database features will be disabled.")
     yield
     # Shutdown
