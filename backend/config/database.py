@@ -13,8 +13,8 @@ def _ensure_storage_dir():
     if STORAGE_DIR and STORAGE_DIR != ".":
         try:
             os.makedirs(STORAGE_DIR, exist_ok=True)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️ Warning: Could not create STORAGE_DIR '{STORAGE_DIR}': {e}")
 
     if DATABASE_URL.startswith("sqlite"):
         try:
@@ -22,8 +22,8 @@ def _ensure_storage_dir():
             db_dir = os.path.dirname(db_path)
             if db_dir:
                 os.makedirs(db_dir, exist_ok=True)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️ Warning: Could not create database directory for '{DATABASE_URL}': {e}")
 
 _ensure_storage_dir()
 

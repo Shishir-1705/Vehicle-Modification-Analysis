@@ -55,6 +55,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         db_status["connected"] = False
         db_status["error"] = str(e)
+        import traceback
+        traceback.print_exc()
         print(f"❌ SQLITE DATABASE INITIALIZATION FAILED: {e}")
         print("💡 API Server will continue running, but database features will be disabled.")
     yield
